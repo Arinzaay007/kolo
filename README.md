@@ -28,6 +28,7 @@ Built for **Total Recall — Tatum × Walrus Memory Hackathon** (Track 3 · Cons
 | Member can see **and contest** their own record | ✅ 2 tests |
 | Dispute **ruling** → correction that supersedes | ✅ 9 pure + 4 store tests |
 | Live recall hardened (7-query union, 5s cache, bust on write) | ✅ |
+| x402: 402 challenge, facilitator client, live capability check | ✅ 12 tests, `npm run x402:check` |
 | Collector address recalled from memory (was an env var) | ✅ 2 tests |
 | Seed circle (15 memories) on Mainnet | ⏳ `npm run seed` with keys |
 | x402 collector fee | ⏳ stretch, day 11+ |
@@ -165,6 +166,47 @@ half is optional; `tests/schema.test.ts` round-trips every seed memory to prove 
 
 ---
 
+## The collector fee (x402)
+
+The third special award, and the honest shape of an agent payment here: the circle's **collector
+agent earns a fee per round it actually reconciles**. Not "an agent pays for a data refresh", which
+is contrived in a consumer app — real verifiable work, paid on delivery, which is the same
+proof-gated instinct the rest of Kolo runs on.
+
+**Verified live, 26 Oct 2026.** Faciliator: `sui-facilitator.onrender.com` — non-custodial,
+zero-fee, Apache-2.0, listed in the official x402 directory. It advertises `exact` on
+`sui:mainnet` with Circle USDC, and the app's challenge is accepted:
+
+```bash
+npm run x402:check
+# network      sui:mainnet
+# asset        0xdba3…00e7::usdc::USDC
+# amount       10000 atomic = $0.01
+# SUPPORTED — the facilitator will verify and settle this exact challenge.
+```
+
+Flow, per the x402 v2 facilitator API:
+
+```
+402 + PAYMENT-REQUIRED   → the payer signs its OWN Sui transaction
+retry + PAYMENT-SIGNATURE → /verify, then /settle
+200 + PAYMENT-RESPONSE    → the receipt, carrying the Sui digest
+```
+
+The facilitator never holds funds and cannot redirect a payment: it relays the payer's signed
+bytes. Kolo never sees a key.
+
+Two things worth knowing:
+
+- **The challenge names the reconcile digest** (`extra.reconcileDigest`). The fee is bound to the
+  round it paid for, so a receipt cannot be replayed against a different round.
+- **Capability caching is keyed per facilitator URL.** A global cache would let a client pointed at
+  facilitator B inherit facilitator A's capabilities — a quiet lie, and my first version did exactly
+  that until a test caught it.
+
+Not done yet: the paid route itself and a settled end-to-end run, which needs a funded payer key
+(USDC on Sui). Testnet is the cheap path — same code, `KOLO_X402_NETWORK=sui:testnet`.
+
 ## Going real: testing with real Mainnet funds
 
 Two independent halves, and only one of them costs anything.
@@ -258,13 +300,14 @@ src/lib/tatum.ts       Sui Mainnet gRPC client + transfer/balance normalisation
 src/lib/reconcile.ts   claim + expectation + observation → verdict + memories
 src/lib/dispute.ts     objection + ruling → resolution + correction (pure, 9 tests)
 src/lib/config.ts      coin, amount, round window, real addresses — one place
+src/lib/x402.ts        the collector fee: 402 challenge, verify, settle (12 tests)
 src/data/store.ts      one interface, two implementations (fixture | live):
                        circles, members, rotation, memories, record, contest, accountOf, verifyClaim
 src/seed/circle.ts     the demo circle (Ada, Emeka, Tunde) and its history
 scripts/spike.ts       the day-0 gate
 scripts/seed.ts        writes the seed to Mainnet, records blob ids
-tests/                 57 tests: envelope, reconciliation, store, claim,
-                       portability, disputes, and the ruling loop
+tests/                 69 tests: envelope, reconciliation, store, claim,
+                       portability, disputes, the ruling loop, x402
 ```
 
 `src/lib/*` has no Next.js in it, so the engine stays reusable if the shell is ever rewritten.

@@ -12,7 +12,8 @@
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 3000",
-    "verify": "tsx scripts/verify.ts"
+    "verify": "tsx scripts/verify.ts",
+    "x402:check": "tsx scripts/x402-check.ts"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.6",
