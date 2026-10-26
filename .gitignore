@@ -2,7 +2,8 @@ node_modules/
 .env
 .env.*
 !.env.example
-evidence/
+evidence/*
+!evidence/seed-mainnet.json
 dist/
 .DS_Store
 

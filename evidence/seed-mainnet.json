@@ -1,0 +1,172 @@
+{
+  "wroteAt": "2026-10-26T02:49:22.399Z",
+  "network": "Sui Mainnet (Walrus Memory production relayer)",
+  "relayer": "https://relayer.memory.walrus.xyz",
+  "namespace": "kolo",
+  "circle": "kolo-circle-1",
+  "count": 23,
+  "recallsOk": true,
+  "records": [
+    {
+      "id": "rhythm-ada",
+      "type": "member_rhythm",
+      "blobId": "Np2LJwfXCNSTNj2-1HzSaeD5o_an5ai2FTtwrC1CPgM",
+      "at": "2026-10-06T09:00:00.000Z",
+      "sentence": "Ada usually pays around the 5th of the month, give or take 0.4 days (3 payments seen)."
+    },
+    {
+      "id": "rhythm-emeka",
+      "type": "member_rhythm",
+      "blobId": "zL47tiIywvElDoGs3J3FSzJ-blU-JdnwS-zqaErZIxM",
+      "at": "2026-10-06T09:00:00.000Z",
+      "sentence": "Emeka usually pays around the 4th of the month, give or take 0.7 days (3 payments seen)."
+    },
+    {
+      "id": "rhythm-tunde",
+      "type": "member_rhythm",
+      "blobId": "eXuOCEQQUJVgi0E1Ye1KoQicocC6jgXcNY5JIuTBIQc",
+      "at": "2026-10-06T09:00:00.000Z",
+      "sentence": "Tunde usually pays around the 9th of the month, give or take 3.8 days (3 payments seen)."
+    },
+    {
+      "id": "nudge-ada-whatsapp",
+      "type": "nudge_outcome",
+      "blobId": "WhakEDn6Ri4WD8-9-9406bfDoao9agmpIbFC4fkUMHA",
+      "at": "2026-10-05T22:00:00.000Z",
+      "sentence": "Ada was nudged on whatsapp at 19:00 and paid 3 hours later."
+    },
+    {
+      "id": "nudge-ada-sms",
+      "type": "nudge_outcome",
+      "blobId": "xcio2GAr1P2fa03eTYOrayCrmXLycraH9KHbzW57flw",
+      "at": "2026-10-02T22:00:00.000Z",
+      "sentence": "Ada was nudged on sms at 9:00 and nothing arrived."
+    },
+    {
+      "id": "nudge-emeka-whatsapp",
+      "type": "nudge_outcome",
+      "blobId": "_0VVcwgsCcTRbIgdoN1Et4S03fD6G2u-L5lxjVkR6jM",
+      "at": "2026-10-04T14:00:00.000Z",
+      "sentence": "Emeka was nudged on whatsapp at 8:00 and paid 6 hours later."
+    },
+    {
+      "id": "nudge-tunde-call",
+      "type": "nudge_outcome",
+      "blobId": "38CMT_OYAGrYiZNW-n6dbHQ4IelERaZkIfLFUhjM5hs",
+      "at": "2026-10-10T20:00:00.000Z",
+      "sentence": "Tunde was nudged on call at 20:00 and paid 30 hours later."
+    },
+    {
+      "id": "shortfall-r1-tunde",
+      "type": "shortfall_event",
+      "blobId": "gibg0zoJpCmRAaT5i9nDBskpDuLhM31JDrcaoOkCvyM",
+      "at": "2026-10-12T18:00:00.000Z",
+      "sentence": "In round 1 Tunde fell short; Emeka covered it and was repaid."
+    },
+    {
+      "id": "shortfall-r2-tunde",
+      "type": "shortfall_event",
+      "blobId": "BOPFvgFe5QJ_bxMoFm9IM2SL665U3UGk9dWiyMAyp4g",
+      "at": "2026-10-19T18:00:00.000Z",
+      "sentence": "In round 2 Tunde fell short; Emeka covered it and has not been repaid."
+    },
+    {
+      "id": "contest-r1-ada",
+      "type": "contested_claim",
+      "blobId": "Zgu-9jAVC6Z_TbRY28mUnoC0LzY8ApiwdV6g1v5eUuM",
+      "at": "2026-10-11T10:00:00.000Z",
+      "sentence": "Ada claimed a contribution in round 1, but the chain says: a real transaction, but from the previous cycle."
+    },
+    {
+      "id": "constitution-v1",
+      "type": "circle_constitution",
+      "blobId": "KltS_t5noMCqnx-bJvYD8wQEXLRRFSPaFQATHtxylLU",
+      "at": "2026-10-11T12:00:00.000Z",
+      "sentence": "Circle rule: a contribution claim must name a transaction digest before the round closes (adopted learned from dispute, version 1)."
+    },
+    {
+      "id": "reliability-ada",
+      "type": "reliability_trajectory",
+      "blobId": "pjw9cYhagcayso8zEu2I4GFdVmHKgKIjoILZrY0cXHI",
+      "at": "2026-10-20T09:00:00.000Z",
+      "sentence": "Ada's reliability is 88 out of 100, from 3 recorded events."
+    },
+    {
+      "id": "reliability-emeka",
+      "type": "reliability_trajectory",
+      "blobId": "7dEU89lp9qDGeVMpKDB3juLYbsKivhSg7cwKJCzJIDQ",
+      "at": "2026-10-20T09:00:00.000Z",
+      "sentence": "Emeka's reliability is 96 out of 100, from 4 recorded events."
+    },
+    {
+      "id": "reliability-tunde",
+      "type": "reliability_trajectory",
+      "blobId": "60rklbpEGiu3ukaMMX02j92hosO6atbi2ZbcpMShLG8",
+      "at": "2026-10-20T09:00:00.000Z",
+      "sentence": "Tunde's reliability is 61 out of 100, from 3 recorded events."
+    },
+    {
+      "id": "account-ada",
+      "type": "circle_account",
+      "blobId": "nVWX4UCMOocMf8CNEBxQKMVBfVnkk72FbXSEY28aFzc",
+      "at": "2026-09-28T08:00:00.000Z",
+      "sentence": "Ada receives contributions at 0xcbe6ebdf3ac280d8c123ac713b910258a58aacc515307a66f529b8d42a06bb28."
+    },
+    {
+      "id": "account-emeka",
+      "type": "circle_account",
+      "blobId": "ommHPX9tLfmS3Lu6YLOxJ2lr37yhkk8Zx3T9WODZPug",
+      "at": "2026-09-28T08:00:00.000Z",
+      "sentence": "Emeka receives contributions at 0xf0edacf824de81df1a927ca23e997c0f9e0039e7b0619958bd13c69b08d5a8b4."
+    },
+    {
+      "id": "account-tunde",
+      "type": "circle_account",
+      "blobId": "xHmMhzGHSBcKWndwhaQu_Ekt1iN8cHA7WHXFe-PoNvs",
+      "at": "2026-09-28T08:00:00.000Z",
+      "sentence": "Tunde receives contributions at 0xe164def04182863550e8998d88e5f1a006325c3f83682f8b6874d6929ab75c1f."
+    },
+    {
+      "id": "account-ngozi",
+      "type": "circle_account",
+      "blobId": "gtdD2IGkvdbqma8biPUqGDWGuQC-8z4WeBvx5RghmeM",
+      "at": "2026-09-28T08:00:00.000Z",
+      "sentence": "Ngozi receives contributions at 0x4c6b6c12e083dfbd1c39fef7d853264777cd03ab7f2f945c93a7f257201af5bc."
+    },
+    {
+      "id": "account-bola",
+      "type": "circle_account",
+      "blobId": "IeXvZlPh-GtKueDA5pl0J2b4U5L-CI1pe_JBsu_9r10",
+      "at": "2026-09-28T08:00:00.000Z",
+      "sentence": "Bola receives contributions at 0x3a1d152e78f8c8a35731dbe06faf641c733575ffa76559b9396ef5d5adf558b1."
+    },
+    {
+      "id": "dispute-ada-r1",
+      "type": "member_dispute",
+      "blobId": "Swj3w-Lbt9D5HMjWy_iRz60ktgfO7G4aMLbHa-irQU4",
+      "at": "2026-10-13T08:00:00.000Z",
+      "sentence": "Ada disputes a memory held about them: I sent it on the 3rd of the month, not after the deadline, the app looked at the wrong week (open)."
+    },
+    {
+      "id": "constitution-c2-v1",
+      "type": "circle_constitution",
+      "blobId": "m01ypTIXePm-tpOi45A6KQer325on8rVLyMserMQPlI",
+      "at": "2026-10-21T09:00:00.000Z",
+      "sentence": "Circle rule: a member brings their record with them; no one starts from zero (adopted founded, version 1)."
+    },
+    {
+      "id": "rotation-c2-r1",
+      "type": "rotation_decision",
+      "blobId": "3pDv1QMScQ59TPgPoBmUO4Li_7LKxZlOEoAJhuWXyyU",
+      "at": "2026-10-22T09:00:00.000Z",
+      "sentence": "Round 1 pays out in this order: Emeka, then Ngozi, then Bola. Because: Emeka has never paid late and covered two shortfalls, earned in another circle and carried here; Ngozi is new with no record yet, so she follows the member who has one; Bola is new too, and collecting last is the cheapest place to learn a payment rhythm."
+    },
+    {
+      "id": "rotation-r3",
+      "type": "rotation_decision",
+      "blobId": "Bp0GqQ7f9aS2djoFskt6h7nOxmezZvO5o80Rewwl47k",
+      "at": "2026-10-20T09:30:00.000Z",
+      "sentence": "Round 3 pays out in this order: Emeka, then Ada, then Tunde. Because: Emeka covered two shortfalls and has never been late, so he collects first; Ada slipped once on a claim, and only from last cycle, so she keeps second place; Tunde was late twice and has not repaid the second shortfall, so he collects last."
+    }
+  ]
+}
