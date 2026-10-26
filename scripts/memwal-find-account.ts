@@ -27,8 +27,14 @@ function arg(name: string): string | undefined {
 const key = arg('key') ?? arg('owner') ?? process.env.MEMWAL_OWNER_SECRET ?? process.env.KOLO_PAYER_SECRET;
 let address = arg('address') ?? process.env.MEMWAL_OWNER_ADDRESS;
 
+// A hex secret key is the format generateDelegateKey() returns; fromSecretKey wants bytes for that.
+function keypairFrom(raw: string): Ed25519Keypair {
+  if (/^[0-9a-f]{64}$/i.test(raw)) return Ed25519Keypair.fromSecretKey(Uint8Array.from(Buffer.from(raw, 'hex')));
+  return Ed25519Keypair.fromSecretKey(raw);
+}
+
 if (!address && key) {
-  address = Ed25519Keypair.fromSecretKey(key).toSuiAddress();
+  address = keypairFrom(key).toSuiAddress();
   console.log(`address derived from the key: ${address}`);
 }
 
@@ -106,6 +112,24 @@ try {
   for (const d of delegates) {
     console.log(`  · ${d.label ?? '(no label)'}  ${d.sui_address ?? ''}`);
   }
+  // If a candidate private key was supplied, say plainly whether the relayer will accept it.
+  if (key) {
+    const kp = keypairFrom(key);
+    const candidate = kp.toSuiAddress();
+    // MEMWAL_AGENT_ID is the delegate PUBLIC key, not this address — a different value entirely.
+    const pubkeyHex = Buffer.from(kp.getPublicKey().toRawBytes()).toString('hex');
+    console.log(`\nMEMWAL_AGENT_ID=${pubkeyHex}   (public key of the supplied private key)`);
+    const hit = delegates.find((d: any) => String(d.sui_address).toLowerCase() === candidate.toLowerCase());
+    if (hit) {
+      console.log(`\nMATCH: that private key is the delegate "${hit.label ?? '(no label)'}" — the relayer will accept it.`);
+    } else {
+      console.log(`\nMISMATCH: that private key derives ${candidate}, which is NOT a registered delegate.`);
+      console.log('The relayer will reject it even though the account ID is right. Use the key whose');
+      console.log('address appears in the list above, or register this one with:');
+      console.log(`  npm run memwal:account -- --owner <owner key> --reuse-account ${accountId}`);
+    }
+  }
+
   if (delegates.length === 0) {
     console.log('\nNo delegate key yet, so the relayer will reject SDK calls. Add one:');
     console.log(`  npm run memwal:account -- --owner <owner key> --reuse-account ${accountId}`);
