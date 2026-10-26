@@ -95,14 +95,14 @@ describe('does the facilitator actually support us', () => {
     expect(out.reason).toMatch(/does not advertise/);
   });
 
-  it('refuses when the advertised USDC is a different token', async () => {
+  it('allows a non-USDC asset but says so, because the facilitator is asset-agnostic', async () => {
     const f = fakeFetch([
       { x402Version: 2, scheme: 'exact', network: 'sui:mainnet', extra: { usdc: `0x${'ff'.repeat(32)}::usdc::USDC` } },
     ]);
-    const req = buildChallenge({ payTo: PAY_TO, resource: 'r', description: 'd' }).accepts[0]!;
+    const req = buildChallenge({ payTo: PAY_TO, resource: 'r', description: 'd', asset: '0x2::sui::SUI' }).accepts[0]!;
     const out = await canSettle(req, 'https://fake', f);
-    expect(out.ok).toBe(false);
-    expect(out.reason).toMatch(/not the USDC/);
+    expect(out.ok).toBe(true);
+    expect(out.reason).toMatch(/asset-agnostic/);
   });
 
   it('reports a dead facilitator as a reason, never as success', async () => {

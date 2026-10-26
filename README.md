@@ -7,7 +7,7 @@ a record that travels with a member to their next circle.
 Built for **Total Recall — Tatum × Walrus Memory Hackathon** (Track 3 · Consumer Finance).
 
 📄 [`BLOG.md`](BLOG.md) — the write-up · 🎬 [`DEMO.md`](DEMO.md) — shot-by-shot script ·
-🚀 [`DEPLOY.md`](DEPLOY.md) — Vercel setup
+🚀 [`DEPLOY.md`](DEPLOY.md) — Vercel setup · 🧪 [`TESTNET.md`](TESTNET.md) — which network may be testnet
 
 > Kolo never holds your money. It knows what happened to it. That is a memory problem, which is
 > why it runs on Walrus.
@@ -204,8 +204,10 @@ Two things worth knowing:
   facilitator B inherit facilitator A's capabilities — a quiet lie, and my first version did exactly
   that until a test caught it.
 
-Not done yet: the paid route itself and a settled end-to-end run, which needs a funded payer key
-(USDC on Sui). Testnet is the cheap path — same code, `KOLO_X402_NETWORK=sui:testnet`.
+**Built:** `app/api/collector` (the paid route: 402 → verify → settle → receipt) and
+`scripts/x402-pay.ts` (the payer builds and signs its own transaction; we never see a key).
+The 402 path is verified live. The settled path needs a funded payer key — testnet SUI from a
+faucet is enough, because the facilitator is asset-agnostic. See [`TESTNET.md`](TESTNET.md).
 
 ## Going real: testing with real Mainnet funds
 

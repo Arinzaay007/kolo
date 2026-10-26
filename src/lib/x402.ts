@@ -14,7 +14,7 @@
  * The facilitator never holds funds and cannot redirect a payment: it relays the payer's
  * own signed bytes. We never see a key.
  */
-import { COIN_TYPE_USDC } from './config';
+import { COIN_TYPE_SUI, COIN_TYPE_USDC } from './config';
 
 export const X402_VERSION = 2 as const;
 export const NETWORK_SUI_MAINNET = 'sui:mainnet' as const;
@@ -62,6 +62,24 @@ export function usdcAsset(net: string = network()): string {
     : COIN_TYPE_USDC;
 }
 
+/**
+ * The coin the fee is paid in.
+ *
+ * USDC is the spec-canonical choice, but the Sui facilitator is asset-agnostic: it enforces
+ * whatever `asset` the requirements name. So a testnet run can pay in testnet SUI from a
+ * faucet, which costs nothing and needs no USDC at all. Override with KOLO_X402_ASSET.
+ */
+export function feeAsset(net: string = network()): string {
+  return process.env.KOLO_X402_ASSET || usdcAsset(net);
+}
+
+/** SUI has 9 decimals, USDC 6 — the fee amount must be scaled to the coin. */
+export function feeAmount(asset: string = feeAsset()): string {
+  const explicit = process.env.KOLO_X402_AMOUNT;
+  if (explicit) return explicit;
+  return asset === COIN_TYPE_SUI ? '1000000' : COLLECTOR_FEE_USDC_6DP;
+}
+
 export interface ChallengeInput {
   payTo: string;
   resource: string;
@@ -86,8 +104,8 @@ export function buildChallenge(input: ChallengeInput): Challenge {
       {
         scheme: 'exact',
         network: net as PaymentRequirements['network'],
-        maxAmountRequired: input.amount ?? COLLECTOR_FEE_USDC_6DP,
-        asset: input.asset ?? usdcAsset(net),
+        maxAmountRequired: input.amount ?? feeAmount(input.asset ?? feeAsset(net)),
+        asset: input.asset ?? feeAsset(net),
         payTo: input.payTo,
         resource: input.resource,
         description: input.description,
@@ -188,8 +206,15 @@ export async function canSettle(
     };
   }
   const advertisedAsset = match.extra?.usdc;
-  if (typeof advertisedAsset === 'string' && !sameAsset(advertisedAsset, requirements.asset)) {
-    return { ok: false, reason: `asset ${requirements.asset} is not the USDC this network settles (${advertisedAsset})` };
+  const payingAdvertisedUsdc =
+    typeof advertisedAsset === 'string' && sameAsset(advertisedAsset, requirements.asset);
+  if (typeof advertisedAsset === 'string' && !payingAdvertisedUsdc) {
+    // The facilitator is asset-agnostic — it enforces whatever `asset` we name — so paying in
+    // SUI is legitimate. Say so instead of implying this is the default, well-trodden path.
+    return {
+      ok: true,
+      reason: `paying in ${requirements.asset}, not the advertised USDC (${advertisedAsset}); the facilitator is asset-agnostic, so confirm with one small live settle before demoing`,
+    };
   }
   return { ok: true };
 }
@@ -238,4 +263,35 @@ export async function settlePayment(args: {
     { x402Version: X402_VERSION, paymentPayload: args.paymentPayload, paymentRequirements: args.requirements },
     args.fetchImpl ?? fetch,
   );
+}
+
+
+/* ─── the payment payload, exactly as the Sui `exact` scheme defines it ─────── */
+
+export interface PaymentPayload {
+  x402Version: typeof X402_VERSION;
+  resource: { url: string; description: string; mimeType: string };
+  accepted: PaymentRequirements;
+  payload: {
+    /** Base64 signature over the transaction bytes. */
+    signature: string;
+    /** Base64 Sui transaction — exactly the bytes the payer signed. */
+    transaction: string;
+  };
+}
+
+export function readRequirements(challenge: Challenge): PaymentRequirements {
+  const req = challenge.accepts[0];
+  if (!req) throw new Error('challenge carries no acceptable payment requirements');
+  return req;
+}
+
+/** The receipt we hand back in PAYMENT-RESPONSE. */
+export interface Receipt {
+  success: boolean;
+  payer?: string;
+  transaction?: string;
+  network?: string;
+  amount?: string;
+  errorReason?: string;
 }
