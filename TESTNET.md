@@ -17,6 +17,26 @@ MEMWAL_SERVER_URL   https://relayer.memory.walrus.xyz   ← never staging
 KOLO_X402_NETWORK   sui:testnet                          ← during x402 work
 ```
 
+## Where the 69 tests fit
+
+**They run on neither network. They make no network calls at all.** Verified by running the whole
+suite inside `unshare -rn` — no network namespace, no DNS, no sockets — and all 69 passed.
+
+That is deliberate: the parts that must be correct forever (the envelope that keeps user text from
+being parsed as JSON, the reconciliation verdicts, the dispute rule, the payment header encoding)
+are pure functions, tested in microseconds. Anything that really hits the wire is checked by a
+script you run on purpose, against a network you chose:
+
+| Evidence | Command | Network |
+|---|---|---|
+| Logic (69 tests) | `npm test` | **none** |
+| Facilitator still supports us | `npm run x402:check` | mainnet (read-only) |
+| A real claim, verified | `npm run verify -- <digest>` | **Mainnet** |
+| A real fee, settled | `npm run x402:pay -- <url>` | testnet → mainnet |
+| Real memories written | `npm run seed` | **Mainnet** (10+ required) |
+
+Do not let "69 green" stand in for the last row. It is a completely different claim.
+
 ## Why testnet is genuinely cheap here
 
 The Sui facilitator is **asset-agnostic** — it enforces whatever `asset` the payment requirements
