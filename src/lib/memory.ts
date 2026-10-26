@@ -48,8 +48,22 @@ export class KoloMemory {
     return new KoloMemory(memwal as unknown as MemoryClient, namespace);
   }
 
-  async health() {
-    return this.client.health();
+  /**
+   * Normalise the relayer's health answer.
+   *
+   * It reports `{ status: "ok" }`, not `{ ok: true }`. Passing that through unchanged made every
+   * caller read `ok === undefined` and refuse to write — a healthy relayer reported as down. One
+   * normalisation here beats a check at each call site.
+   */
+  async health(): Promise<{ ok: boolean; writes?: string; detail?: string; status?: string }> {
+    const raw = (await this.client.health()) as unknown as Record<string, unknown>;
+    const status = typeof raw.status === 'string' ? raw.status : undefined;
+    return {
+      ok: raw.ok === true || status === 'ok',
+      writes: typeof raw.writes === 'string' ? raw.writes : undefined,
+      detail: typeof raw.detail === 'string' ? raw.detail : undefined,
+      status,
+    };
   }
 
   /** Write one memory. Awaits the job so the blob id is real, not pending. */

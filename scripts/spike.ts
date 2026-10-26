@@ -24,10 +24,13 @@ async function gateMemory() {
   const memwal = await KoloMemory.fromEnv();
   const health = await memwal.health();
   const writes = health.writes ?? 'unknown';
+  const healthy = health.ok === true || (health as any).status === 'ok';
   record(
     '1 · Walrus Memory relayer',
-    health.ok && writes !== 'paused',
-    `ok=${health.ok} writes=${writes} (a paused or degraded write path means store nothing and come back)`,
+    // The relayer reports { status: "ok" }, not { ok: true }. Accept either, and treat an
+    // unparseable answer as a failure rather than as success.
+    healthy && writes !== 'paused',
+    `status=${(health as any).status ?? health.ok} writes=${writes} (a paused or degraded write path means store nothing and come back)`,
   );
 
   const entity = {
