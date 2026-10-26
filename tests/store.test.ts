@@ -159,3 +159,68 @@ describe('a member can dispute their own record', () => {
     expect(emeka.disputes.some((d) => d.sentence.includes('Bola'))).toBe(false);
   });
 });
+
+describe('the full dispute loop: contest → rule → correction', () => {
+  it('upholding a dispute moves standing and writes a correction that supersedes', async () => {
+    const fresh = fixtureStore();
+    const before = await fresh.record('Tunde');
+    expect(before.corrections).toBe(0);
+
+    // 1. Tunde objects to a memory held about him.
+    const { id: disputeId } = await fresh.contest({
+      member: 'Tunde',
+      targetId: 'shortfall-r2-tunde',
+      reason: 'I repaid that in cash on the 21st; the collector confirmed it',
+    });
+
+    // 2. Someone rules in his favour.
+    const ruled = await fresh.resolveDispute({
+      member: 'Tunde',
+      disputeId,
+      ruling: 'upheld',
+      note: 'The collector confirmed the cash repayment in writing.',
+    });
+    expect(ruled.summary).toMatch(/upheld/);
+    expect(ruled.blobIds).toHaveLength(2); // resolution + corrected standing
+    expect(ruled.nextScore).toBeGreaterThan(before.reliability ?? 0);
+
+    // 3. The record shows the ruling and counts the correction.
+    const after = await fresh.record('Tunde');
+    expect(after.reliability).toBe(ruled.nextScore);
+    expect(after.corrections).toBe(1);
+    expect(after.resolutions.some((r) => r.ruling === 'upheld' && r.disputeId === disputeId)).toBe(true);
+  });
+
+  it('the memory that was disputed is still readable afterwards', async () => {
+    const fresh = fixtureStore();
+    const original = (await fresh.byIds(['shortfall-r2-tunde']))[0]?.sentence;
+    const { id } = await fresh.contest({ member: 'Tunde', targetId: 'shortfall-r2-tunde', reason: 'this is not what happened at all' });
+    await fresh.resolveDispute({ member: 'Tunde', disputeId: id, ruling: 'upheld', note: 'Confirmed by the collector in writing.' });
+    expect((await fresh.byIds(['shortfall-r2-tunde']))[0]?.sentence).toBe(original);
+  });
+
+  it('rejecting a dispute changes no standing and writes one memory', async () => {
+    const fresh = fixtureStore();
+    const before = await fresh.record('Ada');
+    const { id } = await fresh.contest({ member: 'Ada', targetId: 'contest-r1-ada', reason: 'the app looked at the wrong week entirely' });
+    const ruled = await fresh.resolveDispute({
+      member: 'Ada',
+      disputeId: id,
+      ruling: 'rejected',
+      note: 'The transfer is confirmed outside the round window.',
+    });
+    expect(ruled.blobIds).toHaveLength(1);
+    expect(ruled.nextScore).toBe(before.reliability);
+    const after = await fresh.record('Ada');
+    expect(after.reliability).toBe(before.reliability);
+    expect(after.corrections).toBe(0);
+    expect(after.resolutions.some((r) => r.ruling === 'rejected')).toBe(true);
+  });
+
+  it('refuses to rule on a dispute that does not exist', async () => {
+    const fresh = fixtureStore();
+    await expect(
+      fresh.resolveDispute({ member: 'Ada', disputeId: 'nope', ruling: 'upheld', note: 'a note long enough' }),
+    ).rejects.toThrow(/no dispute/);
+  });
+});

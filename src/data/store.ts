@@ -15,6 +15,7 @@ import { coinType, contributionBase, roundWindow } from '../lib/config';
 import { KoloMemory } from '../lib/memory';
 import { createTatumSui, observeTransfer } from '../lib/tatum';
 import { reconcile, stamp, type ContributionClaim, type Expectation, type ReconcileOutcome } from '../lib/reconcile';
+import { resolve as resolveRuling } from '../lib/dispute';
 
 export type Source = 'mainnet' | 'fixture';
 
@@ -54,12 +55,24 @@ export interface CircleView {
   round: number;
 }
 
+export interface ResolutionView {
+  id: string;
+  disputeId: string;
+  ruling: 'upheld' | 'rejected';
+  note: string;
+  sentence: string;
+  blobId: string;
+}
+
 export interface RecordView {
   member: string;
   /** Latest reliability across all circles. null when the member has no history anywhere. */
   reliability: number | null;
   byCircle: Array<{ circle: string; events: MemoryRow[]; carriesHistory: boolean }>;
   disputes: MemoryRow[];
+  resolutions: ResolutionView[];
+  /** How many memories about this member have been superseded by a correction. */
+  corrections: number;
   address: string | null;
 }
 
@@ -81,6 +94,12 @@ export interface KoloStore {
   byIds(ids: string[]): Promise<MemoryRow[]>;
   record(member: string): Promise<RecordView>;
   contest(input: { member: string; targetId: string; reason: string }): Promise<{ blobId: string; id: string }>;
+  resolveDispute(input: {
+    member: string;
+    disputeId: string;
+    ruling: 'upheld' | 'rejected';
+    note: string;
+  }): Promise<{ summary: string; nextScore: number | null; blobIds: string[] }>;
   accountOf(member: string): Promise<{ address: string | null; source: MemoryRow | null }>;
   verifyClaim(input: { member: string; digest: string; amountBase?: string; circle?: string }): Promise<ClaimResult>;
 }
@@ -198,6 +217,21 @@ export function fixtureStore(): KoloStore {
             carriesHistory: !mine.some((r) => r.circle === circle) && value !== null,
           })),
         disputes: mine.filter((r) => r.type === 'member_dispute'),
+        resolutions: mine
+          .filter((r) => r.type === 'dispute_resolution')
+          .map((r) => {
+            const e = entities.find((x) => x.id === r.id);
+            const d = e?.type === 'dispute_resolution' ? e.data : null;
+            return {
+              id: r.id,
+              disputeId: d?.disputeId ?? '',
+              ruling: d?.ruling ?? 'rejected',
+              note: d?.note ?? '',
+              sentence: r.sentence,
+              blobId: r.blobId,
+            };
+          }),
+        corrections: entities.filter((e) => e.supersedes && memberOf(e) === member).length,
         address: accountFor(member).address,
       };
     },
@@ -213,6 +247,31 @@ export function fixtureStore(): KoloStore {
       entities.push(entity);
       blobs.set(id, fakeBlob(id));
       return { blobId: blobs.get(id)!, id };
+    },
+    resolveDispute: async ({ member, disputeId, ruling, note }) => {
+      const dispute = entities.find((e) => e.id === disputeId);
+      if (dispute?.type !== 'member_dispute') throw new Error(`no dispute ${disputeId}`);
+      const traj = entities
+        .filter((e): e is Extract<MemoryEntity, { type: 'reliability_trajectory' }> =>
+          e.type === 'reliability_trajectory' && e.data.member === member,
+        )
+        .sort((a, b) => (a.at < b.at ? -1 : 1));
+      const latest = traj.at(-1);
+      const out = resolveRuling({
+        dispute: { id: dispute.id, circle: dispute.circle, ...dispute.data },
+        current: latest ? { score: latest.data.score, evidenceIds: latest.data.evidenceIds, id: latest.id } : null,
+        ruling,
+        note,
+        at: new Date().toISOString(),
+      });
+      const blobIds: string[] = [];
+      for (const e of out.memories) {
+        entities.push(e);
+        const b = fakeBlob(e.id);
+        blobs.set(e.id, b);
+        blobIds.push(b);
+      }
+      return { summary: out.summary, nextScore: out.nextScore, blobIds };
     },
     accountOf: async (member) => accountFor(member),
     verifyClaim: async ({ member, digest, amountBase = contributionBase(), circle = CIRCLE }) => {
@@ -264,12 +323,51 @@ export function fixtureStore(): KoloStore {
 export function liveStore(opts: { memwal: KoloMemory; tatum: ReturnType<typeof createTatumSui> }): KoloStore {
   const { memwal, tatum } = opts;
 
-  /** Recall a wide pool, dedupe, and keep the entity so the app reads exact fields, not prose. */
-  const pool = async (query = 'everything this circle remembers', limit = 80) => {
-    const hits = await memwal.recall(query, limit);
+  /**
+   * Recall everything the UI needs.
+   *
+   * One broad semantic query is not a database scan: recall returns the nearest matches to
+   * that one query, so as the record grows a single query silently starts missing memories.
+   * So we ask several differently-worded questions and union the results. It costs a few
+   * more calls and it is the difference between "the rotation cites a memory we cannot
+   * show" and the recall actually surfacing it.
+   */
+  const QUERIES = [
+    'everything this circle remembers about its members',
+    'who paid, who was late, who covered a shortfall',
+    'what reminder worked for which member and when',
+    'why does the rotation pay out in this order',
+    'what did the circle learn from a dispute',
+    'where does each member receive contributions',
+    'what did members dispute about their own record',
+  ];
+
+  /** 5s cache: a single page render asks several times, and the relayer is a public good. */
+  const TTL_MS = 5_000;
+  let cached: { at: number; items: Array<{ entity: MemoryEntity; row: MemoryRow }> } | null = null;
+  const bust = () => {
+    cached = null;
+  };
+
+  const pool = async (
+    query = 'everything this circle remembers about its members',
+    limit = 40,
+  ): Promise<Array<{ entity: MemoryEntity; row: MemoryRow }>> => {
+    if (cached && Date.now() - cached.at < TTL_MS) return cached.items;
+
+    const asked = [...new Set([query, ...QUERIES])];
+    const pages = await Promise.all(
+      asked.map((q) =>
+        memwal.recall(q, limit).catch(() => [] as Array<{ entity: MemoryEntity; blobId: string; text: string }>),
+      ),
+    );
     const byId = new Map<string, { entity: MemoryEntity; row: MemoryRow }>();
-    for (const h of hits) if (!byId.has(h.entity.id)) byId.set(h.entity.id, { entity: h.entity, row: toRow(h.entity, h.blobId) });
-    return [...byId.values()];
+    for (const page of pages) {
+      for (const h of page) if (!byId.has(h.entity.id)) byId.set(h.entity.id, { entity: h.entity, row: toRow(h.entity, h.blobId) });
+    }
+    const items = [...byId.values()];
+    cached = { at: Date.now(), items };
+    return items;
   };
 
   const rotationFor = async (circle: string): Promise<RotationView | null> => {
@@ -357,6 +455,20 @@ export function liveStore(opts: { memwal: KoloMemory; tatum: ReturnType<typeof c
           carriesHistory: !seen.has(circle) && value !== null,
         })),
         disputes: mine.filter((r) => r.type === 'member_dispute'),
+        resolutions: all
+          .filter((p) => p.entity.type === 'dispute_resolution' && p.entity.data.member === member)
+          .map((p) => {
+            const d = p.entity.type === 'dispute_resolution' ? p.entity.data : null;
+            return {
+              id: p.row.id,
+              disputeId: d?.disputeId ?? '',
+              ruling: d?.ruling ?? 'rejected',
+              note: d?.note ?? '',
+              sentence: p.row.sentence,
+              blobId: p.row.blobId,
+            };
+          }),
+        corrections: all.filter((p) => p.entity.supersedes && memberOf(p.entity) === member).length,
         address: account.address,
       };
     },
@@ -371,7 +483,30 @@ export function liveStore(opts: { memwal: KoloMemory; tatum: ReturnType<typeof c
         data: { member, targetId, reason, status: 'open' },
       };
       const w = await memwal.remember(entity);
+      bust();
       return { blobId: w.blobId, id: entity.id };
+    },
+    resolveDispute: async ({ member, disputeId, ruling, note }) => {
+      const all = await pool(`what is disputed about ${member}`);
+      const dispute = all.find((p) => p.entity.id === disputeId)?.entity;
+      if (dispute?.type !== 'member_dispute') throw new Error(`no dispute ${disputeId} for ${member}`);
+      const traj = all
+        .filter((p): p is { entity: Extract<MemoryEntity, { type: 'reliability_trajectory' }>; row: MemoryRow } =>
+          p.entity.type === 'reliability_trajectory' && p.entity.data.member === member,
+        )
+        .sort((a, b) => (a.entity.at < b.entity.at ? -1 : 1));
+      const latest = traj.at(-1);
+      const out = resolveRuling({
+        dispute: { id: dispute.id, circle: dispute.circle, ...dispute.data },
+        current: latest ? { score: latest.entity.data.score, evidenceIds: latest.entity.data.evidenceIds, id: latest.entity.id } : null,
+        ruling,
+        note,
+        at: new Date().toISOString(),
+      });
+      const blobIds: string[] = [];
+      for (const e of out.memories) blobIds.push((await memwal.remember(e)).blobId);
+      bust();
+      return { summary: out.summary, nextScore: out.nextScore, blobIds };
     },
     accountOf: async (member) => accountFor(member),
     verifyClaim: async ({ member, digest, amountBase = contributionBase(), circle = CIRCLE }) => {
@@ -399,6 +534,7 @@ export function liveStore(opts: { memwal: KoloMemory; tatum: ReturnType<typeof c
       const out = reconcile(claim, expected, observed);
       const blobIds: string[] = [];
       for (const entity of stamp(out.memories)) blobIds.push((await memwal.remember(entity)).blobId);
+      bust();
       return { ...out, digest, member, blobIds, recipient: address ?? '', recipientSource: source };
     },
   };

@@ -72,3 +72,34 @@ export async function contestMemory(_prev: ContestState, form: FormData): Promis
     return { status: 'error', message: err instanceof Error ? err.message : String(err) };
   }
 }
+
+export interface RulingState {
+  status: 'idle' | 'done' | 'error';
+  message?: string;
+  summary?: string;
+  nextScore?: number | null;
+  blobIds?: string[];
+}
+
+/**
+ * Rule on a member's objection. An upheld ruling writes a correction that supersedes
+ * their earlier standing; nothing is deleted, and a rejected ruling changes nothing.
+ */
+export async function ruleOnDispute(_prev: RulingState, form: FormData): Promise<RulingState> {
+  const member = String(form.get('member') ?? '').trim();
+  const disputeId = String(form.get('disputeId') ?? '').trim();
+  const ruling = String(form.get('ruling') ?? '') as 'upheld' | 'rejected';
+  const note = String(form.get('note') ?? '').trim();
+
+  if (!member || !disputeId) return { status: 'error', message: 'missing member or dispute' };
+  if (ruling !== 'upheld' && ruling !== 'rejected') return { status: 'error', message: 'choose upheld or rejected' };
+  if (note.length < 8) return { status: 'error', message: 'say what you found — at least 8 characters' };
+
+  try {
+    const store = await getStore();
+    const out = await store.resolveDispute({ member, disputeId, ruling, note });
+    return { status: 'done', summary: out.summary, nextScore: out.nextScore, blobIds: out.blobIds };
+  } catch (err) {
+    return { status: 'error', message: err instanceof Error ? err.message : String(err) };
+  }
+}

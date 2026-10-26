@@ -125,6 +125,19 @@ export const MemberDispute = base.extend({
   }),
 });
 
+/** Someone rules on a dispute. A ruling that upholds the member writes a correction;
+ *  nothing is ever deleted, and the original stays readable. */
+export const DisputeResolution = base.extend({
+  type: z.literal('dispute_resolution'),
+  data: z.object({
+    member: memberId,
+    disputeId: z.string().min(1),
+    targetId: z.string().min(1),
+    ruling: z.enum(['upheld', 'rejected']),
+    note: z.string().min(8),
+  }),
+});
+
 export const RotationDecision = base.extend({
   type: z.literal('rotation_decision'),
   data: z.object({
@@ -148,6 +161,7 @@ export const MemoryEntitySchema = z.discriminatedUnion('type', [
   CircleConstitution,
   CircleAccount,
   MemberDispute,
+  DisputeResolution,
   RotationDecision,
 ]);
 
@@ -160,6 +174,7 @@ export type ReliabilityTrajectoryEntity = z.infer<typeof ReliabilityTrajectory>;
 export type CircleConstitutionEntity = z.infer<typeof CircleConstitution>;
 export type CircleAccountEntity = z.infer<typeof CircleAccount>;
 export type MemberDisputeEntity = z.infer<typeof MemberDispute>;
+export type DisputeResolutionEntity = z.infer<typeof DisputeResolution>;
 export type RotationDecisionEntity = z.infer<typeof RotationDecision>;
 
 export type MemoryEntity =
@@ -172,6 +187,7 @@ export type MemoryEntity =
   | CircleConstitutionEntity
   | CircleAccountEntity
   | MemberDisputeEntity
+  | DisputeResolutionEntity
   | RotationDecisionEntity;
 
 export type MemoryType = MemoryEntity['type'];
@@ -192,6 +208,7 @@ export const ENTITY_TYPES: MemoryType[] = [
   'circle_constitution',
   'circle_account',
   'member_dispute',
+  'dispute_resolution',
   'rotation_decision',
 ];
 
@@ -240,6 +257,10 @@ export function sentence(e: MemoryEntity): string {
     case 'member_dispute': {
       const d = e.data;
       return `${d.member} disputes a memory held about them: ${d.reason} (${d.status}).`;
+    }
+    case 'dispute_resolution': {
+      const d = e.data;
+      return `${d.member}'s dispute was ${d.ruling}: ${d.note}`;
     }
     case 'rotation_decision': {
       const d = e.data;

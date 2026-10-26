@@ -6,6 +6,9 @@ a record that travels with a member to their next circle.
 
 Built for **Total Recall — Tatum × Walrus Memory Hackathon** (Track 3 · Consumer Finance).
 
+📄 [`BLOG.md`](BLOG.md) — the write-up · 🎬 [`DEMO.md`](DEMO.md) — shot-by-shot script ·
+🚀 [`DEPLOY.md`](DEPLOY.md) — Vercel setup
+
 > Kolo never holds your money. It knows what happened to it. That is a memory problem, which is
 > why it runs on Walrus.
 
@@ -23,6 +26,8 @@ Built for **Total Recall — Tatum × Walrus Memory Hackathon** (Track 3 · Cons
 | **UI: circle, claim check, inspector, portability, member record** | ✅ **five screens, production build passing** |
 | Second circle + cross-circle rotation evidence | ✅ portability proven in the UI, 4 tests |
 | Member can see **and contest** their own record | ✅ 2 tests |
+| Dispute **ruling** → correction that supersedes | ✅ 9 pure + 4 store tests |
+| Live recall hardened (7-query union, 5s cache, bust on write) | ✅ |
 | Collector address recalled from memory (was an env var) | ✅ 2 tests |
 | Seed circle (15 memories) on Mainnet | ⏳ `npm run seed` with keys |
 | x402 collector fee | ⏳ stretch, day 11+ |
@@ -251,12 +256,15 @@ src/lib/schema.ts      8 entity types, the envelope, sentence()
 src/lib/memory.ts      KoloMemory over @mysten-incubation/memwal
 src/lib/tatum.ts       Sui Mainnet gRPC client + transfer/balance normalisation
 src/lib/reconcile.ts   claim + expectation + observation → verdict + memories
+src/lib/dispute.ts     objection + ruling → resolution + correction (pure, 9 tests)
+src/lib/config.ts      coin, amount, round window, real addresses — one place
 src/data/store.ts      one interface, two implementations (fixture | live):
                        circles, members, rotation, memories, record, contest, accountOf, verifyClaim
 src/seed/circle.ts     the demo circle (Ada, Emeka, Tunde) and its history
 scripts/spike.ts       the day-0 gate
 scripts/seed.ts        writes the seed to Mainnet, records blob ids
-tests/                 36 tests: envelope, reconciliation, store, claim, portability, disputes
+tests/                 57 tests: envelope, reconciliation, store, claim,
+                       portability, disputes, and the ruling loop
 ```
 
 `src/lib/*` has no Next.js in it, so the engine stays reusable if the shell is ever rewritten.

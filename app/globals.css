@@ -207,3 +207,23 @@ button.primary:disabled { opacity: 0.6; cursor: progress; }
   padding: 0.65rem 0.8rem; border-radius: 0 9px 9px 0; font-size: 0.85rem; color: #6b4700;
 }
 .note.info { border-color: var(--blue); background: var(--blue-wash); color: #1c3659; }
+
+/* ---------- ruling on a dispute ---------- */
+.contest { margin-top: 0.5rem; padding-top: 0.6rem; border-top: 1px dashed var(--line); display: grid; gap: 0.5rem; }
+.contest .field, .ruling .field { margin-bottom: 0; }
+.ruling { margin-top: 0.55rem; padding-top: 0.6rem; border-top: 1px dashed var(--line); display: grid; gap: 0.55rem; }
+.ruling-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+button.primary.small, button.ghost.small { font-size: 0.82rem; padding: 0.42rem 0.8rem; }
+button.ghost {
+  font: inherit; font-weight: 600; font-size: 0.82rem; background: #fff; color: var(--ink-soft);
+  border: 1px solid var(--line); border-radius: 10px; cursor: pointer;
+}
+button.ghost:hover { border-color: var(--ink-faint); color: var(--ink); }
+button.ghost:disabled { opacity: 0.6; cursor: progress; }
+.ruling-done {
+  margin-top: 0.55rem; padding: 0.6rem 0.75rem; border-radius: 9px;
+  background: var(--green-wash); border: 1px solid #cfe0d4; display: grid; gap: 0.35rem;
+}
+.corrected { text-decoration: line-through; text-decoration-color: var(--red); opacity: 0.65; }
+.supersedes { font-size: 0.72rem; color: var(--ink-faint); }
+.supersedes code { font-family: var(--mono); background: #f4f1ea; padding: 0.05rem 0.3rem; border-radius: 4px; }

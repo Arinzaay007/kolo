@@ -4,6 +4,7 @@ import { getStore } from '../../../src/data/store';
 import { CIRCLE, CIRCLE_2, MEMBERS, MEMBERS_2 } from '../../../src/seed/circle';
 import { SourceBadge } from '../../components/Bits';
 import { ContestForm } from './ContestForm';
+import { RulingForm } from './RulingForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +39,13 @@ export default async function RecordPage({ params }: { params: Promise<{ member:
           blob it lives in, and any line can be disputed by {member} without anyone&apos;s permission.
         </p>
         <p className="small muted">
+          {record.corrections > 0 && (
+            <>
+              <span className="badge ok">
+                <span className="dot" /> corrected {record.corrections}×
+              </span>{' '}
+            </>
+          )}
           {record.reliability !== null ? (
             <>
               Standing: <strong>{Math.round(record.reliability)}/100</strong> · {' '}
@@ -100,18 +108,34 @@ export default async function RecordPage({ params }: { params: Promise<{ member:
           <p className="small muted">Nothing disputed.</p>
         ) : (
           <ul className="memories">
-            {record.disputes.map((d) => (
-              <li className="memory" key={d.id}>
-                <div className="head">
-                  <span className="chip">dispute</span>
-                  <span className="badge warn">
-                    <span className="dot" /> open
-                  </span>
-                </div>
-                <p className="text">{d.sentence}</p>
-                <span className="blob">blob {d.blobId}</span>
-              </li>
-            ))}
+            {record.disputes.map((d) => {
+              const ruled = record.resolutions.find((r) => r.disputeId === d.id);
+              return (
+                <li className="memory" key={d.id}>
+                  <div className="head">
+                    <span className="chip">dispute</span>
+                    {ruled ? (
+                      <span className={`badge ${ruled.ruling === 'upheld' ? 'ok' : 'plain'}`}>
+                        <span className="dot" /> {ruled.ruling}
+                      </span>
+                    ) : (
+                      <span className="badge warn">
+                        <span className="dot" /> open
+                      </span>
+                    )}
+                  </div>
+                  <p className="text">{d.sentence}</p>
+                  <span className="blob">blob {d.blobId}</span>
+                  {ruled ? (
+                    <p className="small muted" style={{ margin: 0 }}>
+                      Ruling: {ruled.note}
+                    </p>
+                  ) : (
+                    <RulingForm member={member} disputeId={d.id} />
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
         <p className="small muted" style={{ marginBottom: 0 }}>
