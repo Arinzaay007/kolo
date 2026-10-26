@@ -7,7 +7,7 @@ a record that travels with a member to their next circle.
 Built for **Total Recall — Tatum × Walrus Memory Hackathon** (Track 3 · Consumer Finance).
 
 📄 [`BLOG.md`](BLOG.md) — the write-up · 🎬 [`DEMO.md`](DEMO.md) — shot-by-shot script ·
-🚀 [`DEPLOY.md`](DEPLOY.md) — Vercel setup · 🧪 [`MAINNET.md`](MAINNET.md) — full Mainnet, and the preflight that guards it
+🚀 [`DEPLOY.md`](DEPLOY.md) — Vercel setup · 🔑 [`KEYS.md`](KEYS.md) — which credentials, and how to get them · 🧪 [`MAINNET.md`](MAINNET.md) — full Mainnet, and the preflight that guards it
 
 > Kolo never holds your money. It knows what happened to it. That is a memory problem, which is
 > why it runs on Walrus.
