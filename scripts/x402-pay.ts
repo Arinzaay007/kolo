@@ -31,7 +31,7 @@ if (!target) {
 
 const secret = process.env.KOLO_PAYER_SECRET;
 if (!secret) {
-  console.error('KOLO_PAYER_SECRET is not set. Testnet SUI is free: `sui client faucet`.');
+  console.error('KOLO_PAYER_SECRET is not set. Generate one with: npm run keys:sui -- --secrets');
   process.exit(2);
 }
 
@@ -78,7 +78,24 @@ if (isPlaceholderAddress(req.payTo)) {
   process.exit(1);
 }
 
-// ── 2. build and sign our own transaction ────────────────────────────────────
+// ── 2. gas is ours to pay ────────────────────────────────────────────────────
+// The hosted facilitator has no sponsor: /gas-station is 503 unless ENOKI_KEY is configured,
+// and /verify rejects any transaction whose gas owner is not the sender. A sponsored payment
+// cannot settle here, so the payer pays its own gas.
+const gasBalance = await client.getBalance({ owner: payer, coinType: '0x2::sui::SUI' });
+const sui = BigInt(gasBalance.balance.balance);
+console.log(`gas      ${sui} atomic SUI (${Number(sui) / 1e9} SUI)`);
+if (sui < 5_000_000n) {
+  console.error(
+    `\nThe payer holds ${Number(sui) / 1e9} SUI; a transfer needs roughly 0.005.\n` +
+      'Send ~0.1 SUI to this address on the Sui network, then run this again.\n' +
+      'Do not use a gas station: the hosted facilitator does not sponsor, and /verify\n' +
+      'rejects any transaction whose gas owner is not the sender.',
+  );
+  process.exit(1);
+}
+
+// ── 3. build and sign our own transaction ────────────────────────────────────
 // The facilitator is asset-agnostic, so whatever `asset` the challenge names is what we send.
 const tx = new Transaction();
 tx.setSender(payer);
@@ -96,6 +113,20 @@ if (req.asset.endsWith('::sui::SUI')) {
 }
 
 const bytes = await tx.build({ client });
+
+// The one property /verify insists on: gas owner === sender.
+const built = tx.getData();
+const gasOwner = built.gasData.owner ?? payer;
+if (gasOwner !== payer) {
+  console.error(
+    `\nrefusing to sign: gas owner is ${gasOwner} but the sender is ${payer}.\n` +
+      'That is a sponsored transaction, and the facilitator rejects it as an invalid\n' +
+      'sponsor authorization. Kolo always pays its own gas.',
+  );
+  process.exit(1);
+}
+console.log(`gas owner ${gasOwner}  (same as sender, self-funded)`);
+
 const { signature } = await keypair.signTransaction(bytes);
 
 const payload: PaymentPayload = {
@@ -108,7 +139,7 @@ const payload: PaymentPayload = {
   },
 };
 
-// ── 3. retry, paid ───────────────────────────────────────────────────────────
+// ── 4. retry, paid ───────────────────────────────────────────────────────────
 console.log('\nretrying with PAYMENT-SIGNATURE (the facilitator will verify, then settle)…');
 const paid = await fetch(target, {
   headers: { accept: 'application/json', 'PAYMENT-SIGNATURE': encodeHeader(payload) },
@@ -116,6 +147,13 @@ const paid = await fetch(target, {
 
 const body = await paid.text();
 console.log(`\nGET → ${paid.status}`);
+if (/sponsor/i.test(body)) {
+  console.log(
+    '\nThat is a sponsored-transaction error. The hosted facilitator does not sponsor:\n' +
+      '/gas-station is 503 without an ENOKI_KEY, and /verify rejects a transaction whose\n' +
+      'gas owner is not the sender. Fund the payer with ~0.1 SUI and send it again.',
+  );
+}
 const receipt = paid.headers.get('PAYMENT-RESPONSE');
 if (receipt) console.log(`PAYMENT-RESPONSE ${Buffer.from(receipt, 'base64').toString('utf8').slice(0, 400)}`);
 console.log(body.slice(0, 600));

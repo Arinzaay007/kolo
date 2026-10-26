@@ -63,6 +63,22 @@ success. Now:
 Money paths get the strict version. The demo UI keeps the lenient one, because it needs something
 to render.
 
+## Sponsorship is not an option here
+
+The hosted facilitator can sponsor gas, but only when its own `ENOKI_KEY` is set — and on the
+hosted instance it is not. `/gas-station` returns `503 sponsorship not configured`, and `/verify`
+rejects any transaction whose gas owner differs from the sender, because `/settle` only broadcasts
+the payer's signature.
+
+So if you see **"Invalid sponsor authorization"**, nothing is broken in Kolo — you are on a
+sponsored-transaction path that this facilitator does not support. Fund the payer wallet with
+~0.1 SUI and let it pay its own gas. `scripts/x402-pay.ts` now checks both ends of this: it refuses
+to build when the payer has no SUI, and refuses to sign if the built transaction's gas owner is not
+the sender.
+
+That constraint is also a feature of the pitch: the fee comes from the payer's own wallet, and no
+party in the stack can move funds on anyone's behalf.
+
 ## Pay in USDC or in SUI?
 
 The fee defaults to **$0.01 of Circle USDC** (`0xdba3…00e7::usdc::USDC`) — the canonical x402 asset.
