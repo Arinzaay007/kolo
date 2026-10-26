@@ -13,9 +13,9 @@ Every line below is either ✅ (done, evidence exists) or ❌ (not done). Nothin
 | Walrus Memory writing on **Mainnet** | ✅ | 23 blob IDs in `evidence/seed-mainnet.json` | — |
 | **10+ memories** on Mainnet | ✅ | **23**, plus 4 recall probes that find them by meaning | — |
 | **Tatum** RPC used, not decorative | ⚠️ | read a real Mainnet digest (`4ETyDNa5…`); balance read works keyless | `TATUM_API_KEY` for volume |
-| Public repo | ❌ | 13 commits local, **no remote** | needs GitHub |
+| Public repo | ✅ | <https://github.com/Arinzaay007/kolo> — 51 files, `.env` returns 404 | — |
 | Blog post | ❌ | `BLOG.md` written, publish-ready | needs publishing |
-| Demo video | ❌ | `DEMO.md` shot list written | needs recording |
+| Demo video | ❌ | `DEMO.md` shot list written | needs recording against <https://kolo-inky.vercel.app> |
 
 ## Code
 

@@ -1,4 +1,6 @@
-# Kolo — the circle that remembers
+# Kolo
+
+**Live: <https://kolo-inky.vercel.app>** · [repo](https://github.com/Arinzaay007/kolo) · 23 memories on Walrus Mainnet — the circle that remembers
 
 Rotating savings circle where the pot remembers. Members pay in, one collects each round, and
 the circle learns who actually pays, which nudge works, and who has earned an earlier turn —
