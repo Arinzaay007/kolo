@@ -10,9 +10,9 @@ Every line below is either ✅ (done, evidence exists) or ❌ (not done). Nothin
 
 | Requirement | Status | Evidence | Blocker |
 |---|---|---|---|
-| Walrus Memory writing on **Mainnet** | ❌ | — | `MEMWAL_KEY` not set / not verified |
-| **10+ memories** on Mainnet | ❌ | — | `npm run seed` not run |
-| **Tatum** RPC used, not decorative | ⚠️ | read a real Mainnet digest (`4ETyDNa5…`) before any key existed — keyless | `TATUM_API_KEY` for volume |
+| Walrus Memory writing on **Mainnet** | ✅ | 23 blob IDs in `evidence/seed-mainnet.json` | — |
+| **10+ memories** on Mainnet | ✅ | **23**, plus 4 recall probes that find them by meaning | — |
+| **Tatum** RPC used, not decorative | ⚠️ | read a real Mainnet digest (`4ETyDNa5…`); balance read works keyless | `TATUM_API_KEY` for volume |
 | Public repo | ❌ | 13 commits local, **no remote** | needs GitHub |
 | Blog post | ❌ | `BLOG.md` written, publish-ready | needs publishing |
 | Demo video | ❌ | `DEMO.md` shot list written | needs recording |
@@ -34,40 +34,26 @@ Every line below is either ✅ (done, evidence exists) or ❌ (not done). Nothin
 | Key | State | What it unlocks |
 |---|---|---|
 | `MEMWAL_ACCOUNT_ID` | ✅ `0xac392cd6…75aa` (Mainnet, active, 1 delegate: `kolo key`) | — |
-| `MEMWAL_KEY` | ❌ empty | **everything memory** |
-| `MEMWAL_AGENT_ID` | ❌ empty | the submission form |
-| `TATUM_API_KEY` | ❌ empty | chain reads past ~1 call |
-| `KOLO_ADDR_*` | ❌ empty | real member addresses (placeholders otherwise) |
+| `MEMWAL_KEY` | ✅ verified `MATCH` against the account's delegate list | — |
+| `MEMWAL_AGENT_ID` | ✅ `6da31569…e3f8` | the submission form |
+| `TATUM_API_KEY` | ❌ empty — keyless still reads, so not blocking | chain reads past ~1 call |
+| `KOLO_ADDR_*` | ✅ five generated and validated | — |
 | `KOLO_PAYER_SECRET` | ❌ empty | settling the fee |
 
-**Still needed from the dashboard, for the form itself:**
+**Still needed, for the form itself:**
 
-- Tatum **account ID** (different from the API key)
-- `MEMWAL_AGENT_ID` — the delegate **public key** hex, *not* the delegate address
+- Tatum **account ID** and **API key** from dashboard.tatum.io
+- ~~`MEMWAL_AGENT_ID`~~ ✅ `6da315694f07ca7f80e6aee49ae38516ed220fb254468fc5417e5a2d59b5e3f8`
 
 ## Critical path
 
 Ordered so that the two things that could invalidate the whole submission happen first.
 
 ```bash
-# 1. Prove the delegate key is the one registered on the account.
-npm run memwal:find -- --address 0x2542da4d3e9fa1d39295ccf151b1a7200d498ce4c59737008fc5abaeb3220d68 --key <key>
-#    expecting: MATCH: that delegate key is "kolo key"
-#    then fill MEMWAL_KEY and MEMWAL_AGENT_ID in .env
-
-# 2. Tatum key, then addresses. Both free.
-#    dashboard.tatum.io -> API key
-npm run keys:sui              # paste the KOLO_ADDR_* block into .env
-
-# 3. One write. If this fails, stop and fix it — nothing downstream works.
-npm run spike
-
-# 4. The requirement itself: 23 memories on Mainnet.
-npm run seed:dry              # what it would write
-npm run seed                  # do it, then keep the blob IDs
+# 1-4. DONE. Delegate verified, addresses generated, spike green, 23 memories written.
 
 # 5. The gate that catches everything else before money moves.
-npm run preflight             # expecting every line ok, or a clear reason
+npm run preflight             # Tatum key is the main gap it will name
 
 # 6. Deploy (browser only).
 #    push to GitHub, connect the Vercel project, paste env vars — DEPLOY.md
@@ -96,4 +82,4 @@ Not "the app works". These five, in hand:
 
 ## Honest assessment
 
-The engineering is done and tested; what remains is credentials, deployment and recording — all of which need you. The riskiest item is not technical: it is that **step 1 has not been run**, so we still do not know whether the private key you hold is the delegate the account will accept. That is a one-command check and it gates everything.
+The engineering is done and tested; what remains is credentials, deployment and recording — all of which need you. The riskiest item is no longer technical. Three bugs surfaced the moment real keys arrived — the relayer reports `{ status: "ok" }` rather than `{ ok: true }`, so every write path declared a healthy relayer dead; and 23 writes exceed the 60-requests/minute delegate limit, which is now paced and resumable. Both were invisible in fixture mode. Expect more of that class on deploy, where environment is the only thing that differs.
