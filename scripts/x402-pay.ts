@@ -20,6 +20,7 @@ import { Transaction } from '@mysten/sui/transactions';
 import { GrpcTransport } from '@protobuf-ts/grpc-transport';
 import { credentials } from '@grpc/grpc-js';
 import { decodeHeader, encodeHeader, type Challenge, type PaymentPayload } from '../src/lib/x402';
+import { isPlaceholderAddress } from '../src/seed/circle';
 
 const target = process.argv[2];
 if (!target) {
@@ -69,6 +70,13 @@ console.log(`  network  ${req.network}`);
 console.log(`  asset    ${req.asset}`);
 console.log(`  amount   ${req.maxAmountRequired} atomic`);
 console.log(`  payTo    ${req.payTo}`);
+
+// A last line of defence: this spends real money, so refuse a payee nobody controls even if
+// the server asked for it.
+if (isPlaceholderAddress(req.payTo)) {
+  console.error(`\nrefusing to pay: ${req.payTo} is a demo placeholder, not a real address.`);
+  process.exit(1);
+}
 
 // ── 2. build and sign our own transaction ────────────────────────────────────
 // The facilitator is asset-agnostic, so whatever `asset` the challenge names is what we send.

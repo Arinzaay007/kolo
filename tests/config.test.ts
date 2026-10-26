@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { isPlaceholderAddress } from '../src/seed/circle';
 import {
   COIN_TYPE_SUI,
   COIN_TYPE_USDC,
@@ -74,5 +75,30 @@ describe('a transfer of the wrong coin must not count', () => {
 
   it('does not confuse SUI with USDC', () => {
     expect(sameCoin(COIN_TYPE_SUI, COIN_TYPE_USDC)).toBe(false);
+  });
+});
+
+describe('placeholders are never payable', () => {
+  it('identifies a placeholder address, case insensitively', () => {
+    expect(isPlaceholderAddress(`0x${'e7'.repeat(32)}`)).toBe(true);
+    expect(isPlaceholderAddress(`0x${'E7'.repeat(32)}`)).toBe(true);
+    expect(isPlaceholderAddress(`0x${'2f'.repeat(32)}`)).toBe(false);
+  });
+
+  it('refuses to resolve a real address when the override is missing', () => {
+    const saved = process.env.KOLO_ADDR_ADA;
+    delete process.env.KOLO_ADDR_ADA;
+    expect(() => addressOf('Ada', { requireReal: true })).toThrow(/refusing to use a placeholder/);
+    // The demo UI still needs something to render, so the default path keeps working.
+    expect(isPlaceholderAddress(addressOf('Ada'))).toBe(true);
+    if (saved !== undefined) process.env.KOLO_ADDR_ADA = saved;
+  });
+
+  it('still rejects a malformed override', () => {
+    const saved = process.env.KOLO_ADDR_ADA;
+    process.env.KOLO_ADDR_ADA = 'not-an-address';
+    expect(() => addressOf('Ada')).toThrow(/not a Sui address/);
+    if (saved === undefined) delete process.env.KOLO_ADDR_ADA;
+    else process.env.KOLO_ADDR_ADA = saved;
   });
 });

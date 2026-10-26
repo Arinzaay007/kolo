@@ -12,6 +12,7 @@ import {
   type Receipt,
 } from '../../../src/lib/x402';
 import { formatAmount } from '../../../src/lib/config';
+import { isPlaceholderAddress } from '../../../src/seed/circle';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +45,18 @@ export async function GET(req: NextRequest) {
   if (!payTo) {
     return NextResponse.json(
       { error: `no address in memory for ${member}; run the seed or set KOLO_ADDR_*` },
+      { status: 409 },
+    );
+  }
+
+  // Never ask for money on behalf of a placeholder. Real USDC sent to 0xe7e7…e7 is gone for good,
+  // and the flow would otherwise report success while doing it.
+  if (isPlaceholderAddress(payTo)) {
+    return NextResponse.json(
+      {
+        error: `${member} resolves to a placeholder address, so payment would be unrecoverable`,
+        fix: `set KOLO_ADDR_${member.toUpperCase()} to a real Sui address, then seed`,
+      },
       { status: 409 },
     );
   }

@@ -32,10 +32,29 @@ const PLACEHOLDER: Record<string, string> = {
   Bola: `0x${'b0'.repeat(32)}`,
 };
 
-export function addressOf(member: string): string {
+/** The addresses that exist only so the demo UI has something to render. Never pay these. */
+export const PLACEHOLDER_ADDRESSES = new Set(Object.values(PLACEHOLDER).map((a) => a.toLowerCase()));
+
+export function isPlaceholderAddress(address: string): boolean {
+  return PLACEHOLDER_ADDRESSES.has(address.toLowerCase());
+}
+
+/**
+ * Resolve a member to a Sui address.
+ *
+ * `requireReal` is for anything that moves money. Without it, an unset KOLO_ADDR_* quietly falls
+ * back to a placeholder — fine for the demo UI, fatal for a payment: the fee would be sent to an
+ * address nobody holds a key for, and the flow would look like it worked.
+ */
+export function addressOf(member: string, opts: { requireReal?: boolean } = {}): string {
   const key = `KOLO_ADDR_${member.toUpperCase()}`;
   const real = process.env[key];
-  if (!real) return PLACEHOLDER[member] ?? '';
+  if (!real) {
+    if (opts.requireReal) {
+      throw new Error(`${key} is not set; refusing to use a placeholder address for a real payment`);
+    }
+    return PLACEHOLDER[member] ?? '';
+  }
   // A malformed address must stop the run, not fall back. Silently using a placeholder
   // here would make a demo verify against a fake address while looking real.
   if (!/^0x[0-9a-f]{64}$/i.test(real)) {

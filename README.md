@@ -7,7 +7,7 @@ a record that travels with a member to their next circle.
 Built for **Total Recall — Tatum × Walrus Memory Hackathon** (Track 3 · Consumer Finance).
 
 📄 [`BLOG.md`](BLOG.md) — the write-up · 🎬 [`DEMO.md`](DEMO.md) — shot-by-shot script ·
-🚀 [`DEPLOY.md`](DEPLOY.md) — Vercel setup · 🧪 [`TESTNET.md`](TESTNET.md) — which network may be testnet
+🚀 [`DEPLOY.md`](DEPLOY.md) — Vercel setup · 🧪 [`MAINNET.md`](MAINNET.md) — full Mainnet, and the preflight that guards it
 
 > Kolo never holds your money. It knows what happened to it. That is a memory problem, which is
 > why it runs on Walrus.
@@ -28,7 +28,7 @@ Built for **Total Recall — Tatum × Walrus Memory Hackathon** (Track 3 · Cons
 | Member can see **and contest** their own record | ✅ 2 tests |
 | Dispute **ruling** → correction that supersedes | ✅ 9 pure + 4 store tests |
 | Live recall hardened (7-query union, 5s cache, bust on write) | ✅ |
-| x402: 402 challenge, facilitator client, live capability check | ✅ 12 tests, `npm run x402:check` |
+| x402: paid route, payer script, preflight, live capability check | ✅ 15 tests, runs full Mainnet |
 | Collector address recalled from memory (was an env var) | ✅ 2 tests |
 | Seed circle (15 memories) on Mainnet | ⏳ `npm run seed` with keys |
 | x402 collector fee | ⏳ stretch, day 11+ |
@@ -207,7 +207,7 @@ Two things worth knowing:
 **Built:** `app/api/collector` (the paid route: 402 → verify → settle → receipt) and
 `scripts/x402-pay.ts` (the payer builds and signs its own transaction; we never see a key).
 The 402 path is verified live. The settled path needs a funded payer key — testnet SUI from a
-faucet is enough, because the facilitator is asset-agnostic. See [`TESTNET.md`](TESTNET.md).
+faucet is enough, because the facilitator is asset-agnostic. See [`MAINNET.md`](MAINNET.md).
 
 ## Going real: testing with real Mainnet funds
 

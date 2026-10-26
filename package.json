@@ -14,7 +14,8 @@
     "start": "next start -H 0.0.0.0 -p 3000",
     "verify": "tsx scripts/verify.ts",
     "x402:check": "tsx scripts/x402-check.ts",
-    "x402:pay": "tsx scripts/x402-pay.ts"
+    "x402:pay": "tsx scripts/x402-pay.ts",
+    "preflight": "tsx scripts/preflight.ts"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.6",
