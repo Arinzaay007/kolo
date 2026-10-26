@@ -27,6 +27,33 @@ cd kolo && cp .env.example .env     # then fill it in as you go
    - **delegate private key** (ed25519, hex) → `MEMWAL_KEY`
    - **delegate public key** → `MEMWAL_AGENT_ID` — this is what the submission form asks for
 
+### Getting the account ID back, at any time
+
+`MEMWAL_ACCOUNT_ID` is an on-chain object, not something you have to remember. The AccountRegistry
+keeps an `address -> account` table, so it can be read straight off the chain:
+
+```bash
+npm run memwal:find -- --address 0x…      # any Sui address
+npm run memwal:find -- --key suiprivkey1… # or derive the address from the owner key
+```
+
+Real output, against an existing Mainnet account:
+
+```
+table     0xcfe04623… (10843 accounts)
+MEMWAL_ACCOUNT_ID=0x212ffaa5009725d12f70e2699e5163a1f93f4d5574c2c9c2b87a2b243493d56e
+owner     0x80086403…
+active    true
+delegates 1
+  · Web App  0x19e0e7ff…
+```
+
+It also tells you whether a **delegate key** is registered — an account with zero delegates exists
+but the relayer will refuse your SDK calls, which is a confusing failure to debug later. If it says
+`delegates 0`, add one with `--reuse-account`.
+
+If it says *this address has no account*, nothing was ever created: use Path B below.
+
 ### Path B — create it yourself, with no sponsor (if the playground errors)
 
 The playground creates your on-chain account with a **sponsored** transaction. When that sponsor's

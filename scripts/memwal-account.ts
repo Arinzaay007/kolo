@@ -92,9 +92,10 @@ if (accountId) {
     console.error(`\naccount creation failed: ${message}`);
     if (/already exist|EAccountAlreadyExists|\bcode 3\b/i.test(message)) {
       console.error(
-        '\nThis wallet already owns a Walrus Memory account. Find its ID in the playground\n' +
-          '(memory.walrus.xyz), or from the account-created event, then re-run with:\n' +
-          '  npm run memwal:account -- --owner <same key> --reuse-account 0x<account id>',
+        '\nThis wallet already owns a Walrus Memory account, so only the delegate key is missing.\n' +
+          'Look the account up (it is on chain, you do not need to find the tab again):\n' +
+          '  npm run memwal:find -- --key <the same key>\n' +
+          'then re-run with --reuse-account 0x<that account id>.',
       );
     }
     process.exit(1);
