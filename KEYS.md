@@ -17,11 +17,38 @@ cd kolo && cp .env.example .env     # then fill it in as you go
 
 **Free. ~2 minutes. This is the credential the whole submission depends on.**
 
-1. Open **<https://memory.walrus.xyz>** (the Playground — verified live, `200`).
+**Two ways to do this. If the playground gives you an error, use the second one.**
+
+### Path A — the playground (if it works)
+
+1. Open **<https://memory.walrus.xyz>** (verified live, `200`).
 2. Generate an **account ID** and a **delegate key**. You get three things:
    - **account ID** → `MEMWAL_ACCOUNT_ID`
-   - **delegate private key** (ed25519, looks like `suiprivkey1…`) → `MEMWAL_KEY`
+   - **delegate private key** (ed25519, hex) → `MEMWAL_KEY`
    - **delegate public key** → `MEMWAL_AGENT_ID` — this is what the submission form asks for
+
+### Path B — create it yourself, with no sponsor (if the playground errors)
+
+The playground creates your on-chain account with a **sponsored** transaction. When that sponsor's
+authorization is stale you get **"Invalid sponsor authorization"** and no way forward. Nothing about
+the account actually needs a sponsor — it is two ordinary transactions costing a fraction of a cent:
+
+```bash
+npm run memwal:account -- --dry                    # just generate a keypair, offline, free
+npm run memwal:account -- --owner suiprivkey1...   # create the account + register the delegate
+```
+
+It prints a paste-ready `MEMWAL_ACCOUNT_ID` / `MEMWAL_KEY` / `MEMWAL_AGENT_ID` block. Uses the
+public Mainnet deployment IDs:
+
+```
+package   0xe7c16fbea0560e7057e2bf7422feaa4fb313749fc69c9e9092fac7a33b81d7f5
+registry  0x8bf82c9e09e36b8d1c38298f68b7cb68e7b8762887e7592add9986d5e9cf199f
+```
+
+The `--owner` wallet needs ~0.1 SUI. If that wallet already owns an account, it says so and tells you
+to pass `--reuse-account 0x…` — a Sui address can only ever own one.
+
 3. Leave the relayer URL alone. The default in `.env.example` is already the **production**
    relayer:
 

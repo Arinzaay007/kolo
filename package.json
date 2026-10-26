@@ -16,7 +16,8 @@
     "x402:check": "tsx scripts/x402-check.ts",
     "x402:pay": "tsx scripts/x402-pay.ts",
     "preflight": "tsx scripts/preflight.ts",
-    "keys:sui": "tsx scripts/keys-sui.ts"
+    "keys:sui": "tsx scripts/keys-sui.ts",
+    "memwal:account": "tsx scripts/memwal-account.ts"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.6",
