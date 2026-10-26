@@ -1,3 +1,4 @@
+import { explainDigestShape } from '../src/lib/tatum';
 import { describe, expect, it } from 'vitest';
 import { reconcile, sameAddress, stamp, type ContributionClaim, type Expectation } from '../src/lib/reconcile';
 import type { TransferObservation } from '../src/lib/tatum';
@@ -112,5 +113,21 @@ describe('reconcile', () => {
   it('stamps drafts so nothing reaches the engine without a time', () => {
     const [entity] = stamp(reconcile(claim(), expected(), observed()).memories, '2026-11-02T12:00:00.000Z');
     expect(entity?.at).toBe('2026-11-02T12:00:00.000Z');
+  });
+});
+
+describe('a wrong-shaped digest is explained, not parsed', () => {
+  it('calls out a 64-character hex hash as non-Sui', () => {
+    const why = explainDigestShape('fb29561e37fe6f72b866f75ad4c5bf2e04e33ef7216b5574f26eeec5bcacb79e');
+    expect(why).toMatch(/Ethereum transaction hash/);
+    expect(why).toMatch(/A Sui digest is Base58/);
+  });
+
+  it('names a 0x-prefixed value as an address, not a digest', () => {
+    expect(explainDigestShape(`0x${'ab'.repeat(32)}`)).toMatch(/ADDRESS/);
+  });
+
+  it('lets a real Sui digest through untouched', () => {
+    expect(explainDigestShape('4ETyDNa5bhLXzTQsvVyR8LziWiEivrM15oZThd9jxndn')).toBeNull();
   });
 });

@@ -10,7 +10,7 @@
  */
 import 'dotenv/config';
 import { coinType, contributionBase, describe, formatAmount, roundWindow } from '../src/lib/config';
-import { createTatumSui, observeTransfer } from '../src/lib/tatum';
+import { createTatumSui, observeTransfer , explainDigestShape } from '../src/lib/tatum';
 import { reconcile, sameAddress } from '../src/lib/reconcile';
 import { addressOf } from '../src/seed/circle';
 
@@ -36,6 +36,13 @@ console.log(`  collector       ${process.env.KOLO_COLLECTOR_MEMBER || 'Emeka'} â
 console.log();
 
 const client = createTatumSui();
+// A wrong-shaped digest should fail here, in plain language, not inside the chain's parser.
+const shape = explainDigestShape(digest);
+if (shape) {
+  console.error(`\n${digest}\n  ${shape}\n`);
+  process.exit(2);
+}
+
 const observed = await observeTransfer(client, digest, coinType());
 
 console.log(`read ${digest}`);

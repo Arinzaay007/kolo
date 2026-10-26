@@ -11,6 +11,7 @@
  */
 import { credentials } from '@grpc/grpc-js';
 import { GrpcTransport } from '@protobuf-ts/grpc-transport';
+import { toBase58 } from '@mysten/sui/utils';
 import { SuiGrpcClient } from '@mysten/sui/grpc';
 
 export const TATUM_SUI_MAINNET_GRPC = 'sui-mainnet-grpc.gateway.tatum.io';
@@ -102,6 +103,39 @@ export async function observeTransfer(
 }
 
 /** Coin types arrive abbreviated (`0x2::sui::SUI`) or fully normalised; compare the tail. */
+/**
+ * Catch a wrong-shaped digest before it reaches the network, and say something useful.
+ *
+ * A Sui digest is Base58 over 32 bytes — about 44 characters, starting with a letter or digit,
+ * e.g. 4ETyDNa5bhLXzTQsvVyR8LziWiEivrM15oZThd9jxndn. A 64-character hex string is the shape of an
+ * Ethereum transaction hash (or of a 32-byte digest that someone hex-encoded). The chain's own
+ * parser only says "must be Base58 string of length 32", which does not help anyone.
+ *
+ * Returns a human explanation, or null when the digest is plausibly a Sui digest.
+ */
+export function explainDigestShape(digest: string): string | null {
+  const d = digest.trim();
+  // 0x-prefixed 32 bytes is an address or object ID. Check it before the bare-hex case, or the
+  // optional-prefix pattern below would swallow it and mislabel it as a transaction hash.
+  if (/^0x[0-9a-f]{64}$/i.test(d)) {
+    return 'That is 0x-prefixed hex: a Sui ADDRESS or object ID, not a transaction digest.';
+  }
+  if (/^[0-9a-f]{64}$/i.test(d)) {
+    const hex = d.replace(/^0x/i, '');
+    const asBase58 = toBase58(Uint8Array.from(Buffer.from(hex, 'hex')));
+    return [
+      `${d.length} characters, all hex — that is the shape of an Ethereum transaction hash,`,
+      `or of a 32-byte digest someone hex-encoded. A Sui digest is Base58, about 44 characters.`,
+      `If it was meant as hex, the Base58 form would be ${asBase58} — still not a Sui transaction unless it exists there.`,
+      `If it came from an exchange or bridge, check which chain it settled on before assuming Sui.`,
+    ].join(' ');
+  }
+  if (d.length < 30 || d.length > 50) {
+    return `A Sui digest is about 44 Base58 characters; this is ${d.length}.`;
+  }
+  return null;
+}
+
 export function sameCoin(a: string, b: string): boolean {
   const norm = (s: string) => s.toLowerCase().replace(/^0x0*/, '0x');
   return norm(a) === norm(b) || a.toLowerCase().endsWith(b.toLowerCase().split('::').slice(-2).join('::'));
